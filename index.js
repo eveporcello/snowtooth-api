@@ -19,13 +19,20 @@ const typeDefs = `
     }
 
     type Query {
-        allLifts: [Lift!]!
+        allLifts(status: LiftStatus): [Lift!]!
         Lift(id: ID!): Lift!
     }
 `
 const resolvers = {
     Query: {
-        allLifts: () => lifts,
+        allLifts: (root, { status }) => {
+            if (!status) {
+                return lifts
+            } else {
+                var filteredLifts = lifts.filter(lift => lift.status === status)
+                return filteredLifts
+            }
+        },
         Lift: (root, { id }) => {
             var selectedLift = lifts.filter(lift => id === lift.id)
             return selectedLift[0]

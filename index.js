@@ -6,11 +6,18 @@ const typeDefs = `
     type Lift {
         id: ID!
         name: String!
-        status: String
+        status: LiftStatus!
         capacity: Int!
         night: Boolean!
         elevationGain: Int!
     }
+    
+    enum LiftStatus {
+        OPEN
+        HOLD
+        CLOSED
+    }
+
     type Query {
         allLifts: [Lift!]!
     }

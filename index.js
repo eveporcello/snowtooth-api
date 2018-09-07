@@ -11,6 +11,7 @@ const typeDefs = `
         capacity: Int!
         night: Boolean!
         elevationGain: Int!
+        trailAccess: [Trail!]!
     }
 
     type Trail {
@@ -21,6 +22,7 @@ const typeDefs = `
         groomed: Boolean!
         trees: Boolean!
         night: Boolean!
+        accessedByLifts: [Lift!]!
     }
 
     enum LiftStatus {
@@ -104,6 +106,16 @@ const resolvers = {
             updatedTrail.status = status
             return updatedTrail
         }
+    },
+    Lift: {
+        trailAccess: root => root.trails
+            .map(id => trails.find(t => id === t.id))
+            .filter(x => x)
+    },
+    Trail: {
+        accessedByLifts: root => root.lift
+            .map(id => lifts.find(l => id === l.id))
+            .filter(x => x)
     }
 }
 

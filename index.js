@@ -11,7 +11,7 @@ const typeDefs = `
         night: Boolean!
         elevationGain: Int!
     }
-    
+
     enum LiftStatus {
         OPEN
         HOLD
@@ -20,11 +20,16 @@ const typeDefs = `
 
     type Query {
         allLifts: [Lift!]!
+        Lift(id: ID!): Lift!
     }
 `
 const resolvers = {
     Query: {
-        allLifts: () => lifts
+        allLifts: () => lifts,
+        Lift: (root, { id }) => {
+            var selectedLift = lifts.filter(lift => id === lift.id)
+            return selectedLift[0]
+        }
     }
 }
 

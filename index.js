@@ -21,6 +21,7 @@ const typeDefs = `
     type Query {
         allLifts(status: LiftStatus): [Lift!]!
         Lift(id: ID!): Lift!
+        liftCount(status: LiftStatus!): Int!
     }
 `
 const resolvers = {
@@ -36,6 +37,15 @@ const resolvers = {
         Lift: (root, { id }) => {
             var selectedLift = lifts.filter(lift => id === lift.id)
             return selectedLift[0]
+        },
+        liftCount: (root, { status }) => {
+            var i = 0
+            lifts.map(lift => {
+                lift.status === status ?
+                    i++ :
+                    null
+            })
+            return i
         }
     }
 }

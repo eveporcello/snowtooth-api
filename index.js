@@ -1,7 +1,11 @@
-const { ApolloServer } = require('apollo-server')
+const { ApolloServer, PubSub } = require('apollo-server')
 
 const lifts = require('./data/lifts.json')
 const trails = require('./data/trails.json')
+
+const pubsub = new PubSub()
+
+const context = { lifts, trails, pubsub }
 
 const typeDefs = `
     type Lift {
@@ -49,10 +53,15 @@ const typeDefs = `
         setLiftStatus(id: ID!, status: LiftStatus!): Lift!
         setTrailStatus(id: ID!, status: TrailStatus!): Trail!
     }
+
+    type Subscription {
+        liftStatusChange: Lift
+        trailStatusChange: Trail
+    }
 `
 const resolvers = {
     Query: {
-        allLifts: (root, { status }) => {
+        allLifts: (root, { status }, { lifts }) => {
             if (!status) {
                 return lifts
             } else {
@@ -60,11 +69,11 @@ const resolvers = {
                 return filteredLifts
             }
         },
-        Lift: (root, { id }) => {
+        Lift: (root, { id }, { lifts }) => {
             var selectedLift = lifts.filter(lift => id === lift.id)
             return selectedLift[0]
         },
-        liftCount: (root, { status }) => {
+        liftCount: (root, { status }, { lifts }) => {
             var i = 0
             lifts.map(lift => {
                 lift.status === status ?
@@ -73,7 +82,7 @@ const resolvers = {
             })
             return i
         },
-        allTrails: (root, { status }) => {
+        allTrails: (root, { status }, { trails }) => {
             if (!status) {
                 return trails
             } else {
@@ -81,11 +90,11 @@ const resolvers = {
                 return filteredTrails
             }
         },
-        Trail: (root, { id }) => {
+        Trail: (root, { id }, { trails }) => {
             var selectedTrail = trails.filter(trail => id === trail.id)
             return selectedTrail[0]
         },
-        trailCount: (root, { status }) => {
+        trailCount: (root, { status }, { trails }) => {
             var i = 0
             trails.map(trail => {
                 trail.status === status ?
@@ -96,24 +105,34 @@ const resolvers = {
         }
     },
     Mutation: {
-        setLiftStatus: (root, { id, status }) => {
+        setLiftStatus: (root, { id, status }, { lifts, pubsub }) => {
             var updatedLift = lifts.find(lift => id === lift.id)
             updatedLift.status = status
+            pubsub.publish('lift-status-change', { liftStatusChange: updatedLift })
             return updatedLift
         },
-        setTrailStatus: (root, { id, status }) => {
+        setTrailStatus: (root, { id, status }, { trails, pubsub }) => {
             var updatedTrail = trails.find(trail => id === trail.id)
             updatedTrail.status = status
+            pubsub.publish('trail-status-change', { trailStatusChange: updatedTrail })
             return updatedTrail
         }
     },
+    Subscription: {
+        liftStatusChange: {
+            subscribe: (root, data, { pubsub }) => pubsub.asyncIterator('lift-status-change')
+        },
+        trailStatusChange: {
+            subscribe: (root, data, { pubsub }) => pubsub.asyncIterator('trail-status-change')
+        }
+    },
     Lift: {
-        trailAccess: root => root.trails
+        trailAccess: (root, args, { trails }) => root.trails
             .map(id => trails.find(t => id === t.id))
             .filter(x => x)
     },
     Trail: {
-        accessedByLifts: root => root.lift
+        accessedByLifts: (root, args, { lifts }) => root.lift
             .map(id => lifts.find(l => id === l.id))
             .filter(x => x)
     }
@@ -121,7 +140,8 @@ const resolvers = {
 
 const server = new ApolloServer({
     typeDefs,
-    resolvers
+    resolvers,
+    context
 })
 
 server.listen().then(({ url }) => {

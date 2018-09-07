@@ -1,13 +1,23 @@
 const { ApolloServer } = require('apollo-server')
 
+const lifts = require('./data/lifts.json')
+
 const typeDefs = `
+    type Lift {
+        id: ID!
+        name: String!
+        status: String
+        capacity: Int!
+        night: Boolean!
+        elevationGain: Int!
+    }
     type Query {
-        hello: String!
+        allLifts: [Lift!]!
     }
 `
 const resolvers = {
     Query: {
-        hello: () => 'hello world!'
+        allLifts: () => lifts
     }
 }
 

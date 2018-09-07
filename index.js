@@ -23,6 +23,10 @@ const typeDefs = `
         Lift(id: ID!): Lift!
         liftCount(status: LiftStatus!): Int!
     }
+
+    type Mutation {
+        setLiftStatus(id: ID!, status: LiftStatus!): Lift!
+    }
 `
 const resolvers = {
     Query: {
@@ -46,6 +50,13 @@ const resolvers = {
                     null
             })
             return i
+        }
+    },
+    Mutation: {
+        setLiftStatus: (root, { id, status }) => {
+            var updatedLift = lifts.find(lift => id === lift.id)
+            updatedLift.status = status
+            return updatedLift
         }
     }
 }

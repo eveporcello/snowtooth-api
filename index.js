@@ -5,63 +5,63 @@ const trails = require('./data/trails.json')
 
 const pubsub = new PubSub()
 
-const context = { lifts, trails, pubsub }
+const context = { pubsub }
 
 const typeDefs = `
-    type Lift {
-        id: ID!
-        name: String!
-        status: LiftStatus!
-        capacity: Int!
-        night: Boolean!
-        elevationGain: Int!
-        trailAccess: [Trail!]!
-    }
+  type Lift {
+    id: ID
+    name: String!
+    status: LiftStatus!
+    capacity: Int!
+    night: Boolean!
+    elevationGain: Int!
+    trailAccess: [Trail!]!
+  }
 
-    type Trail {
-        id: ID!
-        name: String!
-        status: TrailStatus
-        difficulty: String!
-        groomed: Boolean!
-        trees: Boolean!
-        night: Boolean!
-        accessedByLifts: [Lift!]!
-    }
+  type Trail {
+    id: ID
+    name: String!
+    status: TrailStatus
+    difficulty: String!
+    groomed: Boolean!
+    trees: Boolean!
+    night: Boolean!
+    accessedByLifts: [Lift!]!
+  }
 
-    enum LiftStatus {
-        OPEN
-        HOLD
-        CLOSED
-    }
+  enum LiftStatus {
+    OPEN
+    HOLD
+    CLOSED
+  }
 
-    enum TrailStatus {
-        OPEN
-        CLOSED
-    }
+  enum TrailStatus {
+    OPEN
+    CLOSED
+  }
 
-    type Query {
-        allLifts(status: LiftStatus): [Lift!]!
-        Lift(id: ID!): Lift!
-        liftCount(status: LiftStatus!): Int!
-        allTrails(status: TrailStatus): [Trail!]!
-        Trail(id: ID!): Trail!
-        trailCount(status: TrailStatus!): Int!
-    }
+  type Query {
+    allLifts(status: LiftStatus): [Lift!]!
+    findLiftById(id: ID!): Lift!
+    liftCount(status: LiftStatus!): Int!
+    allTrails(status: TrailStatus): [Trail!]!
+    findTrailById(id: ID!): Trail!
+    trailCount(status: TrailStatus!): Int!
+  }
 
-    type Mutation {
-        setLiftStatus(id: ID!, status: LiftStatus!): Lift!
-        setTrailStatus(id: ID!, status: TrailStatus!): Trail!
-    }
+  type Mutation {
+    setLiftStatus(id: ID!, status: LiftStatus!): Lift!
+    setTrailStatus(id: ID!, status: TrailStatus!): Trail!
+  }
 
-    type Subscription {
-        liftStatusChange: Lift
-        trailStatusChange: Trail
-    }
+  type Subscription {
+    liftStatusChange: Lift
+    trailStatusChange: Trail
+  }
 `
 const resolvers = {
   Query: {
-    allLifts: (root, { status }, { lifts }) => {
+    allLifts: (parent, { status }) => {
       if (!status) {
         return lifts
       } else {
@@ -69,18 +69,18 @@ const resolvers = {
         return filteredLifts
       }
     },
-    Lift: (root, { id }, { lifts }) => {
+    findLiftById: (parent, { id }) => {
       let selectedLift = lifts.find(lift => id === lift.id)
-      return selectedLift[0]
+      return selectedLift
     },
-    liftCount: (root, { status }, { lifts }) => {
+    liftCount: (parent, { status }) => {
       let i = 0
       lifts.map(lift => {
         lift.status === status ? i++ : null
       })
       return i
     },
-    allTrails: (root, { status }, { trails }) => {
+    allTrails: (parent, { status }) => {
       if (!status) {
         return trails
       } else {
@@ -88,11 +88,11 @@ const resolvers = {
         return filteredTrails
       }
     },
-    Trail: (root, { id }, { trails }) => {
+    findTrailById: (parent, { id }) => {
       let selectedTrail = trails.filter(trail => id === trail.id)
       return selectedTrail[0]
     },
-    trailCount: (root, { status }, { trails }) => {
+    trailCount: (parent, { status }) => {
       let i = 0
       trails.map(trail => {
         trail.status === status ? i++ : null
@@ -101,13 +101,13 @@ const resolvers = {
     }
   },
   Mutation: {
-    setLiftStatus: (root, { id, status }, { lifts, pubsub }) => {
+    setLiftStatus: (parent, { id, status }, { pubsub }) => {
       let updatedLift = lifts.find(lift => id === lift.id)
       updatedLift.status = status
       pubsub.publish('lift-status-change', { liftStatusChange: updatedLift })
       return updatedLift
     },
-    setTrailStatus: (root, { id, status }, { trails, pubsub }) => {
+    setTrailStatus: (parent, { id, status }, { pubsub }) => {
       let updatedTrail = trails.find(trail => id === trail.id)
       updatedTrail.status = status
       pubsub.publish('trail-status-change', { trailStatusChange: updatedTrail })
@@ -116,21 +116,21 @@ const resolvers = {
   },
   Subscription: {
     liftStatusChange: {
-      subscribe: (root, data, { pubsub }) =>
+      subscribe: (parent, data, { pubsub }) =>
         pubsub.asyncIterator('lift-status-change')
     },
     trailStatusChange: {
-      subscribe: (root, data, { pubsub }) =>
+      subscribe: (parent, data, { pubsub }) =>
         pubsub.asyncIterator('trail-status-change')
     }
   },
   Lift: {
-    trailAccess: (root, args, { trails }) =>
-      root.trails.map(id => trails.find(t => id === t.id)).filter(x => x)
+    trailAccess: (parent, args) =>
+      parent.trails.map(id => trails.find(t => id === t.id)).filter(x => x)
   },
   Trail: {
-    accessedByLifts: (root, args, { lifts }) =>
-      root.lift.map(id => lifts.find(l => id === l.id)).filter(x => x)
+    accessedByLifts: (parent, args) =>
+      parent.lift.map(id => lifts.find(l => id === l.id)).filter(x => x)
   }
 }
 

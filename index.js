@@ -58,13 +58,11 @@ const resolvers = {
       if (!status) {
         return lifts
       } else {
-        let filteredLifts = lifts.filter(lift => lift.status === status)
-        return filteredLifts
+        return lifts.filter(lift => lift.status === status)
       }
     },
     findLiftById: (parent, { id }) => {
-      let selectedLift = lifts.find(lift => id === lift.id)
-      return selectedLift
+      return lifts.find(lift => id === lift.id)
     },
     liftCount: (parent, { status }) => {
       let i = 0
@@ -77,13 +75,11 @@ const resolvers = {
       if (!status) {
         return trails
       } else {
-        let filteredTrails = trails.filter(trail => trail.status === status)
-        return filteredTrails
+        return trails.filter(trail => trail.status === status)
       }
     },
     findTrailByName: (parent, { name }) => {
-      let selectedTrail = trails.find(trail => name === trail.name)
-      return selectedTrail
+      return trails.find(trail => name === trail.name)
     },
     trailCount: (parent, { status }) => {
       let i = 0
@@ -94,12 +90,12 @@ const resolvers = {
     }
   },
   Mutation: {
-    setLiftStatus: (parent, { id, status }, { pubsub }) => {
+    setLiftStatus: (parent, { id, status }) => {
       let updatedLift = lifts.find(lift => id === lift.id)
       updatedLift.status = status
       return updatedLift
     },
-    setTrailStatus: (parent, { id, status }, { pubsub }) => {
+    setTrailStatus: (parent, { id, status }) => {
       let updatedTrail = trails.find(trail => id === trail.id)
       updatedTrail.status = status
       return updatedTrail
